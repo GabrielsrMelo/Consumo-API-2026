@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -110,7 +111,27 @@ fun CepScreen(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text(text = "Qual CEP está buscando?") },
                     trailingIcon = {
-                        IconButton( onClick = { /* TODO */ } ) {
+                        IconButton( onClick = {
+                            val call = RetrofitFactory().getEnderecoService()
+                                .getEnderecoByCep(cepState)
+
+                            call.enqueue(object : Callback<Endereco>{
+                                override fun onResponse(
+                                    call: Call<Endereco>,
+                                    response: Response<Endereco>
+                                ) {
+                                    Log.i("TESTE", "${response.body()}")
+
+                                    val enderecoEncontrado = response.body()!!
+
+                                    listaEnderecoState = listOf(enderecoEncontrado)
+                                }
+
+                                override fun onFailure(call: Call<Endereco>, t: Throwable) {
+                                    Log.i("TESTE", "${t.message}")
+                                }
+                            })
+                        } ) {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = ""
@@ -168,19 +189,22 @@ fun CepScreen(modifier: Modifier = Modifier) {
                                 rua = ruaState
                             )
 
+
                         call.enqueue(object: Callback<List<Endereco>> {
                             override fun onResponse(
-                                call: Call<List<Endereco>?>?,
+                                call: Call<List<Endereco>>,
                                 response: Response<List<Endereco>>
                             ) {
-                                Log.i("TESTE", "${response.body()}")
+//                                Log.i("TESTE", "${response.body()}")
+
+                                listaEnderecoState = response.body()!!
                             }
 
                             override fun onFailure(
                                 call: Call<List<Endereco>>,
-                                t: Throwable?
+                                t: Throwable
                             ) {
-                                Log.i("TESTE", "${response.body()}")
+                                Log.i("TESTE", "${ t.message }")
                             }
 
                         })
@@ -197,15 +221,15 @@ fun CepScreen(modifier: Modifier = Modifier) {
         LazyColumn(
             modifier = Modifier.padding(horizontal = 16.dp)
         ) {
-            items(120) {
-                CardEndereco()
+            items(listaEnderecoState) {
+                CardEndereco(endereco = it)
             }
         }
     }
 }
 
 @Composable
-fun CardEndereco() {
+fun CardEndereco(endereco: Endereco) {
     Card(
         modifier = Modifier.fillMaxWidth()
             .padding(bottom = 4.dp)
@@ -214,11 +238,11 @@ fun CardEndereco() {
             modifier = Modifier.fillMaxWidth()
                 .padding(8.dp)
         ) {
-            Text(text = "CEP:")
-            Text(text = "Rua:")
-            Text(text = "Cidade:")
-            Text(text = "Bairro:")
-            Text(text = "UF:")
+            Text(text = "CEP: ${endereco.cep}")
+            Text(text = "Rua: ${endereco.rua}")
+            Text(text = "Cidade: ${endereco.cep}")
+            Text(text = "Bairro: ${endereco.bairro}")
+            Text(text = "UF: ${endereco.uf}")
         }
     }
 }
